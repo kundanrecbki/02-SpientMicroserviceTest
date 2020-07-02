@@ -1,0 +1,66 @@
+version: '3'
+services:
+
+ 02-sapient-footballapi-eureka-server:
+  build: ./02-sapient-footballapi-eureka-server
+  ports:
+   - "8761:8761"
+  tty:
+    true
+  restart:
+    unless-stopped
+
+ 02-sapient-footballapi-config-server:
+  build: ./02-sapient-footballapi-config-server
+  depends_on:
+    - 02-sapient-footballapi-eureka-server
+  ports:
+   - "8888:8888"
+  environment:
+    - EUREKA_SERVER=02-sapient-footballapi-eureka-server
+    - EUREKA_PORT=8761
+    - GIT_REPO_FILE_PATH=https://github.com/kundanrecbki/02-configfile-git-repo/
+  tty:
+    true
+  restart:
+    unless-stopped
+    
+ 02-sapient-footballapi-service:
+  build: ./02-sapient-footballapi-service
+  depends_on:
+    - 02-sapient-footballapi-eureka-server
+    - 02-sapient-footballapi-config-server
+  ports:
+   - "8080:8080"
+  environment:
+    - EUREKA_SERVER=02-sapient-footballapi-eureka-server
+    - EUREKA_PORT=8761
+    - CONFIG_SERVER=02-sapient-footballapi-config-server
+    - CONFIG_PORT=8888
+    - ZIPKIN_SERVER=zipkin
+  tty:
+    true
+  restart:
+    unless-stopped
+    
+ 02-sapient-footballapi-zuul-apigateway:
+  build: ./02-sapient-footballapi-zuul-apigateway
+  ports:
+   - "8765:8765"
+  environment:
+    - EUREKA_SERVER=02-sapient-footballapi-eureka-server
+    - EUREKA_PORT=8761
+    - ZIPKIN_SERVER=zipkin
+  tty:
+    true
+  restart:
+    unless-stopped
+    
+ zipkin:
+  build: ./ZipkinServer
+  ports:
+   - "9411:9411"
+  tty:
+    true
+  restart:
+    unless-stopped
